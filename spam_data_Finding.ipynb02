@@ -1,0 +1,981 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "spam_data_Finding",
+      "provenance": [],
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/AkashMuttalwad/ML_Learning/blob/main/spam_data_Finding.ipynb02\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# https://pypi.python.org/pypi/libarchive\n",
+        "!apt-get -qq install -y libarchive-dev && pip install -U libarchive\n",
+        "import libarchive"
+      ],
+      "metadata": {
+        "id": "dhHjTbxcBHBL",
+        "outputId": "1bd34b06-3c21-4844-f9e6-6f2995b814f7",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: libarchive in /usr/local/lib/python3.7/dist-packages (0.4.7)\n",
+            "Requirement already satisfied: nose in /usr/local/lib/python3.7/dist-packages (from libarchive) (1.3.7)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install matplotlib-venn"
+      ],
+      "metadata": {
+        "id": "LjZs3REMB0PK",
+        "outputId": "dfda410e-feef-4869-8b82-52c6753407af",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: matplotlib-venn in /usr/local/lib/python3.7/dist-packages (0.11.7)\n",
+            "Requirement already satisfied: numpy in /usr/local/lib/python3.7/dist-packages (from matplotlib-venn) (1.21.6)\n",
+            "Requirement already satisfied: matplotlib in /usr/local/lib/python3.7/dist-packages (from matplotlib-venn) (3.2.2)\n",
+            "Requirement already satisfied: scipy in /usr/local/lib/python3.7/dist-packages (from matplotlib-venn) (1.7.3)\n",
+            "Requirement already satisfied: pyparsing!=2.0.4,!=2.1.2,!=2.1.6,>=2.0.1 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (3.0.9)\n",
+            "Requirement already satisfied: cycler>=0.10 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (0.11.0)\n",
+            "Requirement already satisfied: kiwisolver>=1.0.1 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (1.4.4)\n",
+            "Requirement already satisfied: python-dateutil>=2.1 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (2.8.2)\n",
+            "Requirement already satisfied: typing-extensions in /usr/local/lib/python3.7/dist-packages (from kiwisolver>=1.0.1->matplotlib->matplotlib-venn) (4.1.1)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.7/dist-packages (from python-dateutil>=2.1->matplotlib->matplotlib-venn) (1.15.0)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!apt-get -qq install -y libfluidsynth1"
+      ],
+      "metadata": {
+        "id": "t1WLMy-LB4ES"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np\n",
+        "import pandas as pd \n",
+        "import numpy as np\n",
+        "from sklearn.feature_extraction.text import CountVectorizer \n",
+        "import warnings\n",
+        "\n",
+        "warnings.filterwarnings('ignore')"
+      ],
+      "metadata": {
+        "id": "6I4kl2dNB9TE"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "metadata": {
+        "id": "75nXNR3nHDya",
+        "outputId": "4ab0cceb-45c1-4ace-d274-749e45faf11d",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Drive already mounted at /content/drive; to attempt to forcibly remount, call drive.mount(\"/content/drive\", force_remount=True).\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df=pd.read_excel(\"/content/drive/MyDrive/spam01.xlsx\")\n",
+        "df.head()"
+      ],
+      "metadata": {
+        "id": "52BXUUx6HeTF",
+        "outputId": "f4f1fa58-c095-46dc-a3be-4b4ed8be7e0a",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 206
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "   Unnamed: 0 ststus                                           message   \\\n",
+              "0           0    ham  Go until jurong point, crazy.. Available only ...   \n",
+              "1           1    ham                      Ok lar... Joking wif u oni...   \n",
+              "2           2   spam  Free entry in 2 a wkly comp to win FA Cup fina...   \n",
+              "3           3    ham  U dun say so early hor... U c already then say...   \n",
+              "4           4    ham  Nah I don't think he goes to usf, he lives aro...   \n",
+              "\n",
+              "  Unnamed: 3 Unnamed: 4 Unnamed: 5  \n",
+              "0        NaN        NaN        NaN  \n",
+              "1        NaN        NaN        NaN  \n",
+              "2        NaN        NaN        NaN  \n",
+              "3        NaN        NaN        NaN  \n",
+              "4        NaN        NaN        NaN  "
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-74a87c36-4f9e-4aa1-9df2-95067d5fe151\">\n",
+              "    <div class=\"colab-df-container\">\n",
+              "      <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Unnamed: 0</th>\n",
+              "      <th>ststus</th>\n",
+              "      <th>message</th>\n",
+              "      <th>Unnamed: 3</th>\n",
+              "      <th>Unnamed: 4</th>\n",
+              "      <th>Unnamed: 5</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>0</td>\n",
+              "      <td>ham</td>\n",
+              "      <td>Go until jurong point, crazy.. Available only ...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>1</td>\n",
+              "      <td>ham</td>\n",
+              "      <td>Ok lar... Joking wif u oni...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>2</td>\n",
+              "      <td>spam</td>\n",
+              "      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>3</td>\n",
+              "      <td>ham</td>\n",
+              "      <td>U dun say so early hor... U c already then say...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>4</td>\n",
+              "      <td>ham</td>\n",
+              "      <td>Nah I don't think he goes to usf, he lives aro...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>\n",
+              "      <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-74a87c36-4f9e-4aa1-9df2-95067d5fe151')\"\n",
+              "              title=\"Convert this dataframe to an interactive table.\"\n",
+              "              style=\"display:none;\">\n",
+              "        \n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\"viewBox=\"0 0 24 24\"\n",
+              "       width=\"24px\">\n",
+              "    <path d=\"M0 0h24v24H0V0z\" fill=\"none\"/>\n",
+              "    <path d=\"M18.56 5.44l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94zm-11 1L8.5 8.5l.94-2.06 2.06-.94-2.06-.94L8.5 2.5l-.94 2.06-2.06.94zm10 10l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94z\"/><path d=\"M17.41 7.96l-1.37-1.37c-.4-.4-.92-.59-1.43-.59-.52 0-1.04.2-1.43.59L10.3 9.45l-7.72 7.72c-.78.78-.78 2.05 0 2.83L4 21.41c.39.39.9.59 1.41.59.51 0 1.02-.2 1.41-.59l7.78-7.78 2.81-2.81c.8-.78.8-2.07 0-2.86zM5.41 20L4 18.59l7.72-7.72 1.47 1.35L5.41 20z\"/>\n",
+              "  </svg>\n",
+              "      </button>\n",
+              "      \n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      flex-wrap:wrap;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "      <script>\n",
+              "        const buttonEl =\n",
+              "          document.querySelector('#df-74a87c36-4f9e-4aa1-9df2-95067d5fe151 button.colab-df-convert');\n",
+              "        buttonEl.style.display =\n",
+              "          google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "        async function convertToInteractive(key) {\n",
+              "          const element = document.querySelector('#df-74a87c36-4f9e-4aa1-9df2-95067d5fe151');\n",
+              "          const dataTable =\n",
+              "            await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                     [key], {});\n",
+              "          if (!dataTable) return;\n",
+              "\n",
+              "          const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "            '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "            + ' to learn more about interactive tables.';\n",
+              "          element.innerHTML = '';\n",
+              "          dataTable['output_type'] = 'display_data';\n",
+              "          await google.colab.output.renderOutput(dataTable, element);\n",
+              "          const docLink = document.createElement('div');\n",
+              "          docLink.innerHTML = docLinkHtml;\n",
+              "          element.appendChild(docLink);\n",
+              "        }\n",
+              "      </script>\n",
+              "    </div>\n",
+              "  </div>\n",
+              "  "
+            ]
+          },
+          "metadata": {},
+          "execution_count": 192
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "**lenght of data**"
+      ],
+      "metadata": {
+        "id": "rB9MP6ujHvPk"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "len(df)"
+      ],
+      "metadata": {
+        "id": "EgZnj6v6Hpjr",
+        "outputId": "a5163576-4642-4842-b016-4ba2551ae0b9",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "5572"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 193
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "**spam occures in our data set**"
+      ],
+      "metadata": {
+        "id": "oHxRp16gLAXB"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "len(df[df.ststus==\"spam\"])"
+      ],
+      "metadata": {
+        "id": "nIJlkK5wH06Q",
+        "outputId": "fe18630b-4a1e-43b5-c05b-46a3374a6082",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "747"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 194
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "replacing ham by 1 and spam by 0"
+      ],
+      "metadata": {
+        "id": "L2DYcqg1L3iC"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df.loc[df[\"ststus\"]==\"ham\",\"ststus\"]=1\n",
+        "df.loc[df[\"ststus\"]==\"spam\",\"ststus\"]=0\n",
+        "df.head()"
+      ],
+      "metadata": {
+        "id": "CjP-s1LnIuX6",
+        "outputId": "a4123f44-cf64-4b24-f14c-49ab42c7dc5e",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 206
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "   Unnamed: 0 ststus                                           message   \\\n",
+              "0           0      1  Go until jurong point, crazy.. Available only ...   \n",
+              "1           1      1                      Ok lar... Joking wif u oni...   \n",
+              "2           2      0  Free entry in 2 a wkly comp to win FA Cup fina...   \n",
+              "3           3      1  U dun say so early hor... U c already then say...   \n",
+              "4           4      1  Nah I don't think he goes to usf, he lives aro...   \n",
+              "\n",
+              "  Unnamed: 3 Unnamed: 4 Unnamed: 5  \n",
+              "0        NaN        NaN        NaN  \n",
+              "1        NaN        NaN        NaN  \n",
+              "2        NaN        NaN        NaN  \n",
+              "3        NaN        NaN        NaN  \n",
+              "4        NaN        NaN        NaN  "
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-f316e6bb-ab7c-403f-8ddc-8e5f2232447b\">\n",
+              "    <div class=\"colab-df-container\">\n",
+              "      <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Unnamed: 0</th>\n",
+              "      <th>ststus</th>\n",
+              "      <th>message</th>\n",
+              "      <th>Unnamed: 3</th>\n",
+              "      <th>Unnamed: 4</th>\n",
+              "      <th>Unnamed: 5</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>Go until jurong point, crazy.. Available only ...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>Ok lar... Joking wif u oni...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>2</td>\n",
+              "      <td>0</td>\n",
+              "      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>3</td>\n",
+              "      <td>1</td>\n",
+              "      <td>U dun say so early hor... U c already then say...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>4</td>\n",
+              "      <td>1</td>\n",
+              "      <td>Nah I don't think he goes to usf, he lives aro...</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>\n",
+              "      <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-f316e6bb-ab7c-403f-8ddc-8e5f2232447b')\"\n",
+              "              title=\"Convert this dataframe to an interactive table.\"\n",
+              "              style=\"display:none;\">\n",
+              "        \n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\"viewBox=\"0 0 24 24\"\n",
+              "       width=\"24px\">\n",
+              "    <path d=\"M0 0h24v24H0V0z\" fill=\"none\"/>\n",
+              "    <path d=\"M18.56 5.44l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94zm-11 1L8.5 8.5l.94-2.06 2.06-.94-2.06-.94L8.5 2.5l-.94 2.06-2.06.94zm10 10l.94 2.06.94-2.06 2.06-.94-2.06-.94-.94-2.06-.94 2.06-2.06.94z\"/><path d=\"M17.41 7.96l-1.37-1.37c-.4-.4-.92-.59-1.43-.59-.52 0-1.04.2-1.43.59L10.3 9.45l-7.72 7.72c-.78.78-.78 2.05 0 2.83L4 21.41c.39.39.9.59 1.41.59.51 0 1.02-.2 1.41-.59l7.78-7.78 2.81-2.81c.8-.78.8-2.07 0-2.86zM5.41 20L4 18.59l7.72-7.72 1.47 1.35L5.41 20z\"/>\n",
+              "  </svg>\n",
+              "      </button>\n",
+              "      \n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      flex-wrap:wrap;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "      <script>\n",
+              "        const buttonEl =\n",
+              "          document.querySelector('#df-f316e6bb-ab7c-403f-8ddc-8e5f2232447b button.colab-df-convert');\n",
+              "        buttonEl.style.display =\n",
+              "          google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "        async function convertToInteractive(key) {\n",
+              "          const element = document.querySelector('#df-f316e6bb-ab7c-403f-8ddc-8e5f2232447b');\n",
+              "          const dataTable =\n",
+              "            await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                     [key], {});\n",
+              "          if (!dataTable) return;\n",
+              "\n",
+              "          const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "            '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "            + ' to learn more about interactive tables.';\n",
+              "          element.innerHTML = '';\n",
+              "          dataTable['output_type'] = 'display_data';\n",
+              "          await google.colab.output.renderOutput(dataTable, element);\n",
+              "          const docLink = document.createElement('div');\n",
+              "          docLink.innerHTML = docLinkHtml;\n",
+              "          element.appendChild(docLink);\n",
+              "        }\n",
+              "      </script>\n",
+              "    </div>\n",
+              "  </div>\n",
+              "  "
+            ]
+          },
+          "metadata": {},
+          "execution_count": 195
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\n",
+        "\n",
+        "df_x=df[\"ststus\"]\n",
+        "df_y=df[\"ststus\"]"
+      ],
+      "metadata": {
+        "id": "RXD_Gb1PMP2k"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_x"
+      ],
+      "metadata": {
+        "id": "0H3lkx8_NXza",
+        "outputId": "34a19374-cb8f-40aa-f9e7-d2ace7ce8c78",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "0       1\n",
+              "1       1\n",
+              "2       0\n",
+              "3       1\n",
+              "4       1\n",
+              "       ..\n",
+              "5567    0\n",
+              "5568    1\n",
+              "5569    1\n",
+              "5570    1\n",
+              "5571    1\n",
+              "Name: ststus, Length: 5572, dtype: object"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 197
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "cv=CountVectorizer()"
+      ],
+      "metadata": {
+        "id": "VKON63UhPXDy"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install matplotlib-venn"
+      ],
+      "metadata": {
+        "id": "K0JRKd5zUeyB",
+        "outputId": "b8149ced-801d-44c8-af02-5664f236e349",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: matplotlib-venn in /usr/local/lib/python3.7/dist-packages (0.11.7)\n",
+            "Requirement already satisfied: matplotlib in /usr/local/lib/python3.7/dist-packages (from matplotlib-venn) (3.2.2)\n",
+            "Requirement already satisfied: numpy in /usr/local/lib/python3.7/dist-packages (from matplotlib-venn) (1.21.6)\n",
+            "Requirement already satisfied: scipy in /usr/local/lib/python3.7/dist-packages (from matplotlib-venn) (1.7.3)\n",
+            "Requirement already satisfied: cycler>=0.10 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (0.11.0)\n",
+            "Requirement already satisfied: python-dateutil>=2.1 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (2.8.2)\n",
+            "Requirement already satisfied: pyparsing!=2.0.4,!=2.1.2,!=2.1.6,>=2.0.1 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (3.0.9)\n",
+            "Requirement already satisfied: kiwisolver>=1.0.1 in /usr/local/lib/python3.7/dist-packages (from matplotlib->matplotlib-venn) (1.4.4)\n",
+            "Requirement already satisfied: typing-extensions in /usr/local/lib/python3.7/dist-packages (from kiwisolver>=1.0.1->matplotlib->matplotlib-venn) (4.1.1)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.7/dist-packages (from python-dateutil>=2.1->matplotlib->matplotlib-venn) (1.15.0)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!apt-get -qq install -y libfluidsynth1"
+      ],
+      "metadata": {
+        "id": "l2_8ysz_UhVA"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# https://pypi.python.org/pypi/libarchive\n",
+        "!apt-get -qq install -y libarchive-dev && pip install -U libarchive\n",
+        "import libarchive"
+      ],
+      "metadata": {
+        "id": "ft3nkszoUkLX",
+        "outputId": "389d5d1d-ee4e-4c08-cd06-9b3f868a5e3c",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: libarchive in /usr/local/lib/python3.7/dist-packages (0.4.7)\n",
+            "Requirement already satisfied: nose in /usr/local/lib/python3.7/dist-packages (from libarchive) (1.3.7)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# https://pypi.python.org/pypi/pydot\n",
+        "!apt-get -qq install -y graphviz && pip install pydot\n",
+        "import pydot"
+      ],
+      "metadata": {
+        "id": "7WWk_iIaUnfo",
+        "outputId": "4e1988e7-354c-4728-d157-76a39c54c7ed",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: pydot in /usr/local/lib/python3.7/dist-packages (1.3.0)\n",
+            "Requirement already satisfied: pyparsing>=2.1.4 in /usr/local/lib/python3.7/dist-packages (from pydot) (3.0.9)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install cartopy\n",
+        "import cartopy"
+      ],
+      "metadata": {
+        "id": "82JR8BTFUqga",
+        "outputId": "e4d46c7d-5f5a-486c-c2cf-01acd064eb9a",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: cartopy in /usr/local/lib/python3.7/dist-packages (0.19.0.post1)\n",
+            "Requirement already satisfied: pyshp>=2 in /usr/local/lib/python3.7/dist-packages (from cartopy) (2.3.1)\n",
+            "Requirement already satisfied: numpy>=1.13.3 in /usr/local/lib/python3.7/dist-packages (from cartopy) (1.21.6)\n",
+            "Requirement already satisfied: shapely>=1.5.6 in /usr/local/lib/python3.7/dist-packages (from cartopy) (1.8.4)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# split a dataset into train and test sets\n",
+        "from sklearn.datasets import make_blobs\n",
+        "from sklearn.model_selection import train_test_split\n"
+      ],
+      "metadata": {
+        "id": "-1udsn1YUCNi"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# split into train test sets\n",
+        "X_train, X_test, y_train, y_test = train_test_split(df_x,df_y, test_size=0.33,random_state=4)"
+      ],
+      "metadata": {
+        "id": "2TNjkdmDUCQ_"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "x_traincv = cv.fit_transform([\"Go until jurong point, crazy.. Available only in bugis n great world la e buffet... Cine there got amore wat...\"])"
+      ],
+      "metadata": {
+        "id": "_BpDZdJ-VqG6"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "x_traincv.toarray()"
+      ],
+      "metadata": {
+        "id": "1XuwGmD0WD5q",
+        "outputId": "e93198ac-5889-424f-da6b-f37cd000c938",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 207
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "cv.get_feature_names()"
+      ],
+      "metadata": {
+        "id": "8sqlKNshW7hJ",
+        "outputId": "e4add1b7-d4bd-4a4a-dad6-3ce13f8db4db",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "['amore',\n",
+              " 'available',\n",
+              " 'buffet',\n",
+              " 'bugis',\n",
+              " 'cine',\n",
+              " 'crazy',\n",
+              " 'go',\n",
+              " 'got',\n",
+              " 'great',\n",
+              " 'in',\n",
+              " 'jurong',\n",
+              " 'la',\n",
+              " 'only',\n",
+              " 'point',\n",
+              " 'there',\n",
+              " 'until',\n",
+              " 'wat',\n",
+              " 'world']"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 208
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "cv1=CountVectorizer()"
+      ],
+      "metadata": {
+        "id": "GHOjldK6XPTw"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "a=x_traincv.toarray()"
+      ],
+      "metadata": {
+        "id": "25GNn5zCXTOq"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "a"
+      ],
+      "metadata": {
+        "id": "bQvjAB8JZMLi",
+        "outputId": "fe093d72-94f5-478a-da1d-1fe6bc3f2ea1",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 213
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "a[0]"
+      ],
+      "metadata": {
+        "id": "RxyZ1Tj_ZPlY",
+        "outputId": "9f8eab45-ae38-4ff5-afd3-c09bf0d03934",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 214
+        }
+      ]
+    }
+  ]
+}
